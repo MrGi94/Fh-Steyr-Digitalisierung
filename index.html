@@ -267,6 +267,22 @@
             display: inline-block; margin-bottom: 16px;
         }
 
+        /* ── Language Switcher ── */
+        .lang-switcher {
+            display: flex; align-items: center; gap: 0;
+            background: rgba(255,255,255,0.1); border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.18); overflow: hidden;
+            margin-left: auto;
+        }
+        .lang-btn {
+            background: none; border: none; color: rgba(255,255,255,0.5);
+            padding: 5px 12px; font-size: 13px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+        }
+        .lang-btn:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
+        .lang-btn.active { color: #fff; background: rgba(255,255,255,0.18); }
+        .lang-divider { width: 1px; height: 16px; background: rgba(255,255,255,0.2); }
+
         /* ── Footer ── */
         .footer {
             text-align: center; padding: 24px; font-size: 12px; color: var(--text-muted);
@@ -288,6 +304,11 @@
         <div class="logo">
             <div class="logo-icon">F</div>
             Finance Portal
+        </div>
+        <div class="lang-switcher">
+            <button class="lang-btn active" onclick="switchLang('de')">DE</button>
+            <div class="lang-divider"></div>
+            <button class="lang-btn" onclick="switchLang('en')">EN</button>
         </div>
     </div>
 </header>
@@ -782,6 +803,427 @@
 
     // ── Init ──
     renderPostenTable(offenePosten);
+
+    // ══════════════════════════════════════════════════════════════
+    // i18n – Language Switcher (DE ↔ EN)
+    // The German version is the original; English is the overlay.
+    // ══════════════════════════════════════════════════════════════
+    const translations = {
+        // ── Tab bar ──
+        'tab-dashboard': { de: 'Dashboard', en: 'Dashboard' },
+        'tab-kreditor': { de: 'Kreditor anlegen', en: 'Create Supplier' },
+        'tab-rechnung': { de: 'Rechnung erfassen', en: 'Enter Invoice' },
+        'tab-offene-posten': { de: 'Offene Posten ', en: 'Open Items ' }, // badge appended separately
+
+        // ── Dashboard stat labels ──
+        'stat-offene-rechnungen': { de: 'Offene Rechnungen', en: 'Open Invoices' },
+        'stat-offener-betrag': { de: 'Offener Betrag', en: 'Outstanding Amount' },
+        'stat-kreditoren': { de: 'Kreditoren', en: 'Suppliers' },
+        'stat-eingereicht': { de: 'Eingereicht heute', en: 'Submitted Today' },
+        'stat-sub-ueberfaellig': { de: 'davon 3 überfällig', en: '3 of which overdue' },
+        'stat-sub-stand': { de: 'Stand: heute', en: 'As of: today' },
+        'stat-sub-monat': { de: '+5 diesen Monat', en: '+5 this month' },
+        'stat-sub-rechnungen': { de: 'Rechnungen', en: 'Invoices' },
+
+        // ── Dashboard card ──
+        'dash-card-title': { de: 'Letzte Buchungen', en: 'Recent Entries' },
+        'dash-card-sub': { de: 'Die 5 neuesten Rechnungseingänge', en: 'The 5 most recent invoice receipts' },
+        'dash-th-rechnung': { de: 'Rechnung', en: 'Invoice' },
+        'dash-th-lieferant': { de: 'Lieferant', en: 'Supplier' },
+        'dash-th-betrag': { de: 'Betrag', en: 'Amount' },
+        'dash-th-status': { de: 'Status', en: 'Status' },
+
+        // ── Kreditor form ──
+        'kred-card-title': { de: 'Neuen Kreditor anlegen', en: 'Create New Supplier' },
+        'kred-card-sub': { de: 'Lieferantenstammdaten erfassen und im System anlegen', en: 'Enter supplier master data and create in system' },
+        'lbl-firma': { de: 'Firmenname', en: 'Company Name' },
+        'lbl-rechtsform': { de: 'Rechtsform', en: 'Legal Form' },
+        'lbl-uid': { de: 'UID-Nummer', en: 'VAT ID' },
+        'lbl-steuernr': { de: 'Steuernummer', en: 'Tax Number' },
+        'lbl-strasse': { de: 'Straße und Hausnummer', en: 'Street and Number' },
+        'lbl-plz': { de: 'PLZ', en: 'Postal Code' },
+        'lbl-ort': { de: 'Ort', en: 'City' },
+        'lbl-land': { de: 'Land', en: 'Country' },
+        'lbl-zahlung': { de: 'Zahlungskondition', en: 'Payment Terms' },
+        'lbl-iban': { de: 'IBAN', en: 'IBAN' },
+        'lbl-bic': { de: 'BIC', en: 'BIC' },
+        'lbl-kontakt': { de: 'Ansprechpartner', en: 'Contact Person' },
+        'lbl-email': { de: 'E-Mail', en: 'Email' },
+        'lbl-bemerkung': { de: 'Bemerkung', en: 'Notes' },
+        'btn-kred-reset': { de: 'Zurücksetzen', en: 'Reset' },
+        'btn-kred-submit': { de: 'Kreditor anlegen', en: 'Create Supplier' },
+        'confirm-kred-title': { de: 'Kreditor erfolgreich angelegt', en: 'Supplier Created Successfully' },
+        'confirm-kred-sub': { de: 'Der Lieferant wurde im System gespeichert und kann ab sofort für Buchungen verwendet werden.', en: 'The supplier has been saved and can now be used for bookings.' },
+        'btn-kred-another': { de: 'Weiteren Kreditor anlegen', en: 'Create Another Supplier' },
+
+        // ── Kreditor select options ──
+        'opt-bitte-waehlen': { de: 'Bitte wählen…', en: 'Please select…' },
+        'opt-at': { de: 'Österreich', en: 'Austria' },
+        'opt-de': { de: 'Deutschland', en: 'Germany' },
+        'opt-ch': { de: 'Schweiz', en: 'Switzerland' },
+        'opt-30tage': { de: '30 Tage netto', en: '30 days net' },
+        'opt-14skonto': { de: '14 Tage 2% Skonto', en: '14 days 2% discount' },
+        'opt-60tage': { de: '60 Tage netto', en: '60 days net' },
+        'opt-sofort': { de: 'Sofort netto', en: 'Immediate net' },
+
+        // ── Rechnung form ──
+        'rech-card-title': { de: 'Eingangsrechnung erfassen', en: 'Enter Incoming Invoice' },
+        'rech-card-sub': { de: 'Rechnungsdaten prüfen und zur Freigabe einreichen', en: 'Review invoice data and submit for approval' },
+        'lbl-rechnungsnr': { de: 'Rechnungsnummer', en: 'Invoice Number' },
+        'lbl-rechnungsdatum': { de: 'Rechnungsdatum', en: 'Invoice Date' },
+        'lbl-lieferant': { de: 'Lieferant', en: 'Supplier' },
+        'lbl-kostenstelle': { de: 'Kostenstelle', en: 'Cost Center' },
+        'lbl-netto': { de: 'Nettobetrag (€)', en: 'Net Amount (€)' },
+        'lbl-ust': { de: 'USt-Satz', en: 'VAT Rate' },
+        'lbl-brutto': { de: 'Bruttobetrag (€)', en: 'Gross Amount (€)' },
+        'lbl-faellig': { de: 'Fälligkeitsdatum', en: 'Due Date' },
+        'lbl-buchungstext': { de: 'Buchungstext', en: 'Posting Text' },
+        'btn-re-reset': { de: 'Zurücksetzen', en: 'Reset' },
+        'btn-re-submit': { de: 'Rechnung einreichen', en: 'Submit Invoice' },
+        'confirm-re-title': { de: 'Rechnung erfolgreich eingereicht', en: 'Invoice Submitted Successfully' },
+        'confirm-re-sub': { de: 'Die Rechnung wurde zur Freigabe weitergeleitet.', en: 'The invoice has been forwarded for approval.' },
+        'buchungslog-title': { de: 'Buchungsprotokoll – heutige Einreichungen', en: 'Posting Log – Today\'s Submissions' },
+        'btn-re-another': { de: 'Weitere Rechnung erfassen', en: 'Enter Another Invoice' },
+
+        // ── Rechnung select options ──
+        'opt-kst100': { de: 'KST-100 · Verwaltung', en: 'CC-100 · Administration' },
+        'opt-kst200': { de: 'KST-200 · Vertrieb', en: 'CC-200 · Sales' },
+        'opt-kst300': { de: 'KST-300 · Produktion', en: 'CC-300 · Production' },
+        'opt-kst400': { de: 'KST-400 · IT', en: 'CC-400 · IT' },
+        'opt-kst500': { de: 'KST-500 · Marketing', en: 'CC-500 · Marketing' },
+        'opt-ust20': { de: '20% (Normalsatz)', en: '20% (standard rate)' },
+        'opt-ust13': { de: '13% (ermäßigt)', en: '13% (reduced)' },
+        'opt-ust10': { de: '10% (ermäßigt)', en: '10% (reduced)' },
+        'opt-ust0': { de: '0% (steuerfrei)', en: '0% (tax-exempt)' },
+
+        // ── Offene Posten ──
+        'op-card-title': { de: 'Offene Posten – Kreditorenbuchhaltung', en: 'Open Items – Accounts Payable' },
+        'op-card-sub': { de: 'Übersicht aller offenen und überfälligen Verbindlichkeiten', en: 'Overview of all open and overdue liabilities' },
+        'op-search-placeholder': { de: 'Suche nach Lieferant, Rechnung…', en: 'Search by supplier, invoice…' },
+        'opt-alle-status': { de: 'Alle Status', en: 'All Statuses' },
+        'opt-offen': { de: 'Offen', en: 'Open' },
+        'opt-ueberfaellig': { de: 'Überfällig', en: 'Overdue' },
+        'opt-teilbezahlt': { de: 'Teilbezahlt', en: 'Partially Paid' },
+        'th-beleg': { de: 'Beleg-Nr.', en: 'Doc. No.' },
+        'th-lieferant': { de: 'Lieferant', en: 'Supplier' },
+        'th-redatum': { de: 'Rechnungsdatum', en: 'Invoice Date' },
+        'th-faellig': { de: 'Fällig am', en: 'Due Date' },
+        'th-kostenstelle': { de: 'Kostenstelle', en: 'Cost Center' },
+        'th-netto': { de: 'Netto (€)', en: 'Net (€)' },
+        'th-ust': { de: 'USt %', en: 'VAT %' },
+        'th-brutto': { de: 'Brutto (€)', en: 'Gross (€)' },
+        'th-status': { de: 'Status', en: 'Status' },
+        'op-gesamtsumme': { de: 'Gesamtsumme offen:', en: 'Total outstanding:' },
+        'btn-csv': { de: '📥 Als CSV exportieren', en: '📥 Export as CSV' },
+
+        // ── Status badges ──
+        'status-offen': { de: 'Offen', en: 'Open' },
+        'status-ueberfaellig': { de: 'Überfällig', en: 'Overdue' },
+        'status-teilbezahlt': { de: 'Teilbezahlt', en: 'Partially Paid' },
+        'status-bezahlt': { de: 'Bezahlt', en: 'Paid' },
+
+        // ── Footer ──
+        'footer-text': { de: 'Trainingsumgebung für', en: 'Training environment for' },
+        'footer-suffix': { de: 'Keine echten Daten', en: 'No real data' },
+
+        // ── Placeholders ──
+        'ph-firma': { de: 'z.B. Müller GmbH', en: 'e.g. Müller GmbH' },
+        'ph-uid': { de: 'ATU12345678', en: 'ATU12345678' },
+        'ph-steuernr': { de: '12 345/6789', en: '12 345/6789' },
+        'ph-strasse': { de: 'Industriestraße 42', en: 'Industriestraße 42' },
+        'ph-plz': { de: '4020', en: '4020' },
+        'ph-ort': { de: 'Linz', en: 'Linz' },
+        'ph-iban': { de: 'AT12 3456 7890 1234 5678', en: 'AT12 3456 7890 1234 5678' },
+        'ph-bic': { de: 'GIBAATWWXXX', en: 'GIBAATWWXXX' },
+        'ph-kontakt': { de: 'Vor- und Nachname', en: 'First and last name' },
+        'ph-email': { de: 'buchhaltung@firma.at', en: 'accounting@company.at' },
+        'ph-bemerkung': { de: 'Interne Notizen zum Lieferanten…', en: 'Internal notes about the supplier…' },
+        'ph-renr': { de: 'z.B. RE-2026-0313', en: 'e.g. RE-2026-0313' },
+        'ph-lieferant': { de: 'z.B. Müller GmbH', en: 'e.g. Müller GmbH' },
+        'ph-netto': { de: '0,00', en: '0.00' },
+        'ph-brutto': { de: '0,00', en: '0.00' },
+        'ph-buchungstext': { de: 'z.B. Büromaterial Q1/2026', en: 'e.g. Office supplies Q1/2026' },
+    };
+
+    // Map of element → translation key (built once on load)
+    // We tag elements with data-i18n in the DOM programmatically to avoid touching original HTML structurally.
+    let currentLang = 'de';
+
+    // ── Tagging helper: run once to annotate DOM ──
+    function tagI18n() {
+        const q = (sel) => document.querySelector(sel);
+        const qa = (sel) => document.querySelectorAll(sel);
+
+        // Tab buttons
+        qa('.tab-btn').forEach(btn => {
+            const key = 'tab-' + btn.dataset.tab;
+            btn.setAttribute('data-i18n', key);
+        });
+
+        // Dashboard stat cards
+        const statLabels = qa('.stat-label');
+        const statSubs = qa('.stat-sub');
+        const statKeys = ['stat-offene-rechnungen','stat-offener-betrag','stat-kreditoren','stat-eingereicht'];
+        const subKeys = ['stat-sub-ueberfaellig','stat-sub-stand','stat-sub-monat','stat-sub-rechnungen'];
+        statLabels.forEach((el, i) => { if (statKeys[i]) el.setAttribute('data-i18n', statKeys[i]); });
+        statSubs.forEach((el, i) => { if (subKeys[i]) el.setAttribute('data-i18n', subKeys[i]); });
+
+        // Dashboard card
+        const dashHeaders = q('#section-dashboard .card-header');
+        if (dashHeaders) {
+            dashHeaders.querySelector('h2').setAttribute('data-i18n', 'dash-card-title');
+            dashHeaders.querySelector('p').setAttribute('data-i18n', 'dash-card-sub');
+        }
+        const dashThs = qa('#section-dashboard th');
+        ['dash-th-rechnung','dash-th-lieferant','dash-th-betrag','dash-th-status'].forEach((k,i) => {
+            if (dashThs[i]) dashThs[i].setAttribute('data-i18n', k);
+        });
+
+        // Kreditor card
+        const kredHeader = q('#section-kreditor .card-header');
+        if (kredHeader) {
+            kredHeader.querySelector('h2').setAttribute('data-i18n', 'kred-card-title');
+            kredHeader.querySelector('p').setAttribute('data-i18n', 'kred-card-sub');
+        }
+
+        // Kreditor labels
+        const kredLabels = qa('#form-kreditor label');
+        const kredLblKeys = ['lbl-firma','lbl-rechtsform','lbl-uid','lbl-steuernr','lbl-strasse','lbl-plz','lbl-ort','lbl-land','lbl-zahlung','lbl-iban','lbl-bic','lbl-kontakt','lbl-email','lbl-bemerkung'];
+        kredLabels.forEach((el, i) => { if (kredLblKeys[i]) el.setAttribute('data-i18n', kredLblKeys[i]); });
+
+        // Kreditor buttons
+        q('#form-kreditor .btn-outline').setAttribute('data-i18n', 'btn-kred-reset');
+        q('#btn-kreditor-submit').setAttribute('data-i18n', 'btn-kred-submit');
+
+        // Kreditor confirmation
+        q('#confirm-kreditor .confirm-title').setAttribute('data-i18n', 'confirm-kred-title');
+        q('#confirm-kreditor .confirm-subtitle').setAttribute('data-i18n', 'confirm-kred-sub');
+        q('#confirm-kreditor .btn-primary').setAttribute('data-i18n', 'btn-kred-another');
+
+        // Rechnung card
+        const rechHeader = q('#section-rechnung .card-header');
+        if (rechHeader) {
+            rechHeader.querySelector('h2').setAttribute('data-i18n', 'rech-card-title');
+            rechHeader.querySelector('p').setAttribute('data-i18n', 'rech-card-sub');
+        }
+
+        // Rechnung labels
+        const rechLabels = qa('#form-rechnung label');
+        const rechLblKeys = ['lbl-rechnungsnr','lbl-rechnungsdatum','lbl-lieferant','lbl-kostenstelle','lbl-netto','lbl-ust','lbl-brutto','lbl-faellig','lbl-buchungstext'];
+        rechLabels.forEach((el, i) => { if (rechLblKeys[i]) el.setAttribute('data-i18n', rechLblKeys[i]); });
+
+        // Rechnung buttons
+        q('#form-rechnung .btn-outline').setAttribute('data-i18n', 'btn-re-reset');
+        q('#btn-rechnung-submit').setAttribute('data-i18n', 'btn-re-submit');
+
+        // Rechnung confirmation
+        q('#confirm-rechnung .confirm-title').setAttribute('data-i18n', 'confirm-re-title');
+        q('#confirm-rechnung .confirm-subtitle').setAttribute('data-i18n', 'confirm-re-sub');
+        q('#confirm-rechnung .buchungslog h3').setAttribute('data-i18n', 'buchungslog-title');
+        q('#confirm-rechnung .btn-accent').setAttribute('data-i18n', 'btn-re-another');
+
+        // Offene Posten card
+        const opHeader = q('#section-offene-posten .card-header');
+        if (opHeader) {
+            opHeader.querySelector('h2').setAttribute('data-i18n', 'op-card-title');
+            opHeader.querySelector('p').setAttribute('data-i18n', 'op-card-sub');
+        }
+
+        // OP table headers
+        const opThs = qa('#offene-posten-table th');
+        ['th-beleg','th-lieferant','th-redatum','th-faellig','th-kostenstelle','th-netto','th-ust','th-brutto','th-status'].forEach((k,i) => {
+            if (opThs[i]) opThs[i].setAttribute('data-i18n', k);
+        });
+
+        // Search placeholder
+        q('#posten-search').setAttribute('data-i18n-ph', 'op-search-placeholder');
+
+        // CSV button
+        q('#btn-csv-export').setAttribute('data-i18n', 'btn-csv');
+
+        // OP filter select options
+        const filterOpts = qa('#posten-filter option');
+        ['opt-alle-status','opt-offen','opt-ueberfaellig','opt-teilbezahlt'].forEach((k,i) => {
+            if (filterOpts[i]) filterOpts[i].setAttribute('data-i18n', k);
+        });
+
+        // OP Gesamtsumme label
+        q('#section-offene-posten .table-info').setAttribute('data-i18n-html', 'op-gesamtsumme');
+
+        // Kreditor select: Rechtsform (keep values, translate display only for "Bitte wählen")
+        const rfOpts = qa('#kred-rechtsform option');
+        if (rfOpts[0]) rfOpts[0].setAttribute('data-i18n', 'opt-bitte-waehlen');
+
+        // Land select
+        const landOpts = qa('#kred-land option');
+        ['opt-at','opt-de','opt-ch'].forEach((k,i) => { if (landOpts[i]) landOpts[i].setAttribute('data-i18n', k); });
+
+        // Zahlungskondition select
+        const zahlOpts = qa('#kred-zahlung option');
+        if (zahlOpts[0]) zahlOpts[0].setAttribute('data-i18n', 'opt-bitte-waehlen');
+        ['','opt-30tage','opt-14skonto','opt-60tage','opt-sofort'].forEach((k,i) => {
+            if (k && zahlOpts[i]) zahlOpts[i].setAttribute('data-i18n', k);
+        });
+
+        // Kostenstelle select
+        const kstOpts = qa('#re-kostenstelle option');
+        if (kstOpts[0]) kstOpts[0].setAttribute('data-i18n', 'opt-bitte-waehlen');
+        ['','opt-kst100','opt-kst200','opt-kst300','opt-kst400','opt-kst500'].forEach((k,i) => {
+            if (k && kstOpts[i]) kstOpts[i].setAttribute('data-i18n', k);
+        });
+
+        // USt select
+        const ustOpts = qa('#re-ust option');
+        if (ustOpts[0]) ustOpts[0].setAttribute('data-i18n', 'opt-bitte-waehlen');
+        ['','opt-ust20','opt-ust13','opt-ust10','opt-ust0'].forEach((k,i) => {
+            if (k && ustOpts[i]) ustOpts[i].setAttribute('data-i18n', k);
+        });
+
+        // Placeholders
+        const phMap = {
+            'kred-firma':'ph-firma', 'kred-uid':'ph-uid', 'kred-steuer':'ph-steuernr',
+            'kred-strasse':'ph-strasse', 'kred-plz':'ph-plz', 'kred-ort':'ph-ort',
+            'kred-iban':'ph-iban', 'kred-bic':'ph-bic', 'kred-kontakt':'ph-kontakt',
+            'kred-email':'ph-email', 'kred-bemerkung':'ph-bemerkung',
+            're-nr':'ph-renr', 're-lieferant':'ph-lieferant',
+            're-netto':'ph-netto', 're-brutto':'ph-brutto', 're-buchungstext':'ph-buchungstext',
+        };
+        for (const [id, key] of Object.entries(phMap)) {
+            const el = document.getElementById(id);
+            if (el) el.setAttribute('data-i18n-ph', key);
+        }
+    }
+
+    // ── Apply translations ──
+    function applyTranslations(lang) {
+        // Text content
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const t = translations[key];
+            if (!t) return;
+
+            // For labels with <span class="required">*</span>, preserve the asterisk
+            const req = el.querySelector('.required');
+            if (req) {
+                el.textContent = t[lang] + ' ';
+                // Only re-add if original had required
+                const span = document.createElement('span');
+                span.className = 'required';
+                span.textContent = '*';
+                el.appendChild(span);
+            } else if (key.startsWith('tab-')) {
+                // Tab buttons: preserve badge if present
+                const badge = el.querySelector('.badge');
+                el.textContent = t[lang] + ' ';
+                if (badge) el.appendChild(badge);
+            } else {
+                el.textContent = t[lang];
+            }
+        });
+
+        // Placeholders
+        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+            const key = el.getAttribute('data-i18n-ph');
+            const t = translations[key];
+            if (t) el.placeholder = t[lang];
+        });
+
+        // Gesamtsumme (HTML content with child element)
+        const gsEl = document.querySelector('[data-i18n-html="op-gesamtsumme"]');
+        if (gsEl) {
+            const strong = gsEl.querySelector('strong');
+            const strongHTML = strong ? strong.outerHTML : '';
+            gsEl.innerHTML = translations['op-gesamtsumme'][lang] + ' ' + strongHTML;
+        }
+
+        // Footer
+        const footer = document.querySelector('.footer');
+        if (footer) {
+            footer.innerHTML = `Finance Portal v2.1 · ${translations['footer-text'][lang]} <span>FH OÖ – Digitalisierung im Finanzbereich</span> · ${translations['footer-suffix'][lang]}`;
+        }
+
+        // Re-render open items table with translated statuses
+        renderPostenTableI18n(lang);
+    }
+
+    // ── Patched table render that respects language ──
+    function renderPostenTableI18n(lang) {
+        const tbody = document.getElementById('posten-tbody');
+        const search = document.getElementById('posten-search').value.toLowerCase();
+        const sf = document.getElementById('posten-filter').value;
+
+        // Map German status values to i18n keys
+        const statusI18n = {
+            'Offen': translations['status-offen'][lang],
+            'Überfällig': translations['status-ueberfaellig'][lang],
+            'Teilbezahlt': translations['status-teilbezahlt'][lang],
+            'Bezahlt': translations['status-bezahlt'][lang],
+        };
+
+        const filtered = offenePosten.filter(p => {
+            const ms = !search || p.beleg.toLowerCase().includes(search) || p.lieferant.toLowerCase().includes(search);
+            const mf = sf === 'alle' || p.status === sf;
+            return ms && mf;
+        });
+
+        tbody.innerHTML = '';
+        let total = 0;
+        filtered.forEach(p => {
+            const brutto = p.netto * (1 + p.ust / 100);
+            total += brutto;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${p.beleg}</strong></td>
+                <td>${p.lieferant}</td>
+                <td>${fmtDate(p.reDatum)}</td>
+                <td>${fmtDate(p.faellig)}</td>
+                <td>${p.kostenstelle}</td>
+                <td class="amount">€ ${fmt(p.netto)}</td>
+                <td>${p.ust}%</td>
+                <td class="amount" style="font-weight:700;">€ ${fmt(brutto)}</td>
+                <td><span class="status-badge ${statusCls(p.status)}">${statusI18n[p.status] || p.status}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const countLabel = lang === 'en' ? `${filtered.length} entries` : `${filtered.length} Einträge`;
+        document.getElementById('posten-count').textContent = countLabel;
+        document.getElementById('total-offen').textContent = `€ ${fmt(total)}`;
+        document.getElementById('dash-offen-betrag').textContent = `€ ${fmt(Math.round(total))}`;
+    }
+
+    // ── Switch language ──
+    function switchLang(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent.trim() === lang.toUpperCase());
+        });
+        applyTranslations(lang);
+    }
+
+    // ── Override original renderPostenTable to be language-aware ──
+    const _origRenderPostenTable = renderPostenTable;
+    renderPostenTable = function(data) {
+        if (currentLang === 'de') {
+            _origRenderPostenTable(data);
+        } else {
+            renderPostenTableI18n(currentLang);
+        }
+    };
+
+    // ── Override filterTable to be language-aware ──
+    const _origFilterTable = filterTable;
+    filterTable = function() {
+        if (currentLang === 'de') {
+            _origFilterTable();
+        } else {
+            renderPostenTableI18n(currentLang);
+        }
+    };
+
+    // ── Tag everything on load ──
+    tagI18n();
 </script>
 </body>
 </html>
