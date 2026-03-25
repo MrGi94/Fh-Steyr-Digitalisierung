@@ -695,17 +695,30 @@
     }
 
     // ── CSV Export ──
-    // Spaltenreihenfolge: Beleg-Nr.;Lieferant;Rechnungsdatum;Faellig_am;Kostenstelle;Netto;USt_Prozent;Brutto;Status
+    // Spaltenreihenfolge matcht 1:1 zu den Spalten der Offene-Posten-Tabelle
+    // → Benotete Übung: Excel-Zeilen → Formular einspielen
     function exportCSV() {
-        let csv = 'Beleg-Nr.;Lieferant;Rechnungsdatum;Faellig_am;Kostenstelle;Netto;USt_Prozent;Brutto;Status\n';
+        const lang = typeof currentLang !== 'undefined' ? currentLang : 'de';
+
+        const headers = lang === 'en'
+            ? 'Doc. No.;Supplier;Invoice Date;Due Date;Cost Center;Net;VAT %;Gross;Status'
+            : 'Beleg-Nr.;Lieferant;Rechnungsdatum;Fällig am;Kostenstelle;Netto;USt %;Brutto;Status';
+
+        const statusMap = lang === 'en' ? {
+            'Offen': 'Open', 'Überfällig': 'Overdue',
+            'Teilbezahlt': 'Partially Paid', 'Bezahlt': 'Paid'
+        } : null;
+
+        let csv = headers + '\n';
         offenePosten.forEach(p => {
             const brutto = p.netto * (1 + p.ust / 100);
-            csv += `${p.beleg};${p.lieferant};${p.reDatum};${p.faellig};${p.kostenstelle};${p.netto.toFixed(2)};${p.ust};${brutto.toFixed(2)};${p.status}\n`;
+            const status = statusMap ? (statusMap[p.status] || p.status) : p.status;
+            csv += `${p.beleg};${p.lieferant};${p.reDatum};${p.faellig};${p.kostenstelle};${p.netto.toFixed(2)};${p.ust};${brutto.toFixed(2)};${status}\n`;
         });
         const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'offene_posten_export.csv';
+        a.download = lang === 'en' ? 'open_items_export.csv' : 'offene_posten_export.csv';
         a.click();
     }
 
